@@ -349,8 +349,8 @@ export default function LeadSearchConfig({ onBack, searchId }: Props) {
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={onBack}><ArrowLeft className="w-4 h-4" /></Button>
         <div>
-          <h1 className="text-xl font-bold text-foreground">Configurar Busca de Leads</h1>
-          <p className="text-xs text-muted-foreground">Configure todos os filtros e execute a busca</p>
+          <h1 className="text-xl font-bold text-foreground">{isEditing ? "Editar Busca de Leads" : "Configurar Busca de Leads"}</h1>
+          <p className="text-xs text-muted-foreground">{isEditing ? "Ajuste os filtros e execute a busca" : "Configure todos os filtros e execute a busca"}</p>
         </div>
       </div>
 
