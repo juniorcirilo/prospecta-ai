@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { testEvolutionConnection } from "@/lib/testEvolutionConnection";
 
 interface StepEvolutionProps {
   apiUrl: string;
@@ -35,14 +36,8 @@ export default function StepEvolution({ apiUrl, apiKey, onApiUrlChange, onApiKey
     setIsTesting(true);
     setTestResult(null);
     try {
-      const baseUrl = apiUrl.replace(/\/$/, "");
-      const res = await fetch(`${baseUrl}/instance/fetchInstances`, {
-        headers: { apikey: apiKey },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const count = Array.isArray(data) ? data.length : 0;
-      setTestResult({ ok: true, message: `Conexão OK — ${count} instância(s) encontrada(s)` });
+      const data = await testEvolutionConnection(apiUrl, apiKey);
+      setTestResult({ ok: true, message: data.message });
       toast.success("Evolution API conectada!");
     } catch (err: any) {
       setTestResult({ ok: false, message: err.message || "Falha na conexão" });

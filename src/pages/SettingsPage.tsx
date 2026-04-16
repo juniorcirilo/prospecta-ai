@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import ElevenLabsSettings from "@/components/settings/ElevenLabsSettings";
 import StepApollo from "@/components/onboarding/StepApollo";
 import { useAuth } from "@/hooks/useAuth";
+import { testEvolutionConnection } from "@/lib/testEvolutionConnection";
 
 export default function SettingsPage() {
   const { isAdmin } = useAuth();
@@ -111,18 +112,9 @@ export default function SettingsPage() {
     setTestStatus("loading");
     setTestMessage("");
     try {
-      const baseUrl = apiUrl.replace(/\/$/, "");
-      const res = await fetch(`${baseUrl}/instance/fetchInstances`, {
-        headers: { apikey: apiKey },
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`HTTP ${res.status}: ${text.slice(0, 100)}`);
-      }
-      const data = await res.json();
-      const count = Array.isArray(data) ? data.length : 0;
+      const data = await testEvolutionConnection(apiUrl, apiKey);
       setTestStatus("success");
-      setTestMessage(`Conexão OK — ${count} instância(s) encontrada(s)`);
+      setTestMessage(data.message);
       toast.success("Conexão com Evolution API bem-sucedida!");
     } catch (err: any) {
       setTestStatus("error");
@@ -169,11 +161,28 @@ export default function SettingsPage() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">URL da API</label>
-                    <Input placeholder="https://api.evolution.com.br" value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} />
+                    <Input
+                      placeholder="https://api.evolution.com.br"
+                      value={apiUrl}
+                      onChange={(e) => {
+                        setApiUrl(e.target.value);
+                        setTestStatus("idle");
+                        setTestMessage("");
+                      }}
+                    />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground">API Key</label>
-                    <Input type="password" placeholder="Sua API Key" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+                    <Input
+                      type="password"
+                      placeholder="Sua API Key"
+                      value={apiKey}
+                      onChange={(e) => {
+                        setApiKey(e.target.value);
+                        setTestStatus("idle");
+                        setTestMessage("");
+                      }}
+                    />
                   </div>
 
                   {testStatus !== "idle" && (
