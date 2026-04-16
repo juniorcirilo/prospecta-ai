@@ -15,6 +15,7 @@ export interface Contact {
   list_id: string | null;
   is_blacklisted: boolean;
   whatsapp_valid: boolean | null;
+  custom_fields: Record<string, string> | null;
   created_at: string;
   updated_at: string;
 }
