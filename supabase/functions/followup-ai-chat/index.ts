@@ -1,8 +1,4 @@
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { corsHeaders, requireAuth } from "../_shared/auth.ts";
 
 const SYSTEM_PROMPT_BASE = `Você é um assistente conversacional e amigável que ajuda a configurar sequências de follow-up para WhatsApp marketing.
 
@@ -148,8 +144,12 @@ const TOOLS = [
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const auth = await requireAuth(req);
+  if (auth instanceof Response) return auth;
+
   try {
     const { messages, flows, campaigns, editingSequence } = await req.json();
+    if (!Array.isArray(messages) || messages.length > 100) throw new Error("messages inválidos");
     console.log("[followup-ai-chat] Received request with", messages?.length, "messages", editingSequence ? `(editing: ${editingSequence.name})` : "(new)");
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

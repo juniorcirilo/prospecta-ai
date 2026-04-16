@@ -1,21 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+import { corsHeaders, requireAuth } from "../_shared/auth.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const auth = await requireAuth(req);
+  if (auth instanceof Response) return auth;
+
   try {
     const { text, apiKey, voiceId, model, stability, similarityBoost, speed } = await req.json();
 
-    if (!apiKey) throw new Error('API Key é obrigatória');
-    if (!text) throw new Error('Texto é obrigatório');
+    if (!apiKey || typeof apiKey !== 'string') throw new Error('API Key é obrigatória');
+    if (!text || typeof text !== 'string' || text.length > 5000) throw new Error('Texto inválido (max 5000 chars)');
 
     const startTime = Date.now();
 

@@ -1,23 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { corsHeaders, jsonResponse, requireAuth } from "../_shared/auth.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  try {
-    const { api_key } = await req.json();
+  const auth = await requireAuth(req, { requireAdmin: true });
+  if (auth instanceof Response) return auth;
 
-    if (!api_key || typeof api_key !== "string") {
-      return new Response(JSON.stringify({ ok: false, message: "API Key não fornecida" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+  try {
+    const { api_key } = await req.json().catch(() => ({}));
+
+    if (!api_key || typeof api_key !== "string" || api_key.length > 500) {
+      return jsonResponse({ ok: false, message: "API Key inválida" }, 400);
     }
 
     const apolloResponse = await fetch("https://api.apollo.io/v1/auth/health", {
