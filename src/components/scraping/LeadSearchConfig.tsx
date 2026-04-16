@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Play, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { useContacts } from "@/hooks/useContacts";
 
 interface Props {
   onBack: () => void;
+  searchId?: string | null;
 }
 
 const SENIORITIES = [
@@ -85,8 +86,8 @@ function toggleInArray(arr: string[], value: string): string[] {
   return arr.includes(value) ? arr.filter((x) => x !== value) : [...arr, value];
 }
 
-export default function LeadSearchConfig({ onBack }: Props) {
-  const { createSearch } = useLeadSearches();
+export default function LeadSearchConfig({ onBack, searchId }: Props) {
+  const { createSearch, searches } = useLeadSearches();
   const { lists } = useContacts();
 
   // Base
