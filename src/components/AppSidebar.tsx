@@ -3,8 +3,10 @@ import {
   LayoutDashboard, Search, Users, Megaphone, Zap, MessageSquare, Brain, Shield,
   BarChart3, FlaskConical, Smartphone, Settings, ChevronLeft, MessageCircle, Volume2, Kanban, GitBranch, LogOut, Database,
 } from "lucide-react";
+import { Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useBranding } from "@/hooks/useBranding";
 
 const navGroups = [
   {
@@ -39,6 +41,7 @@ interface Props {
 export default function AppSidebar({ collapsed, onToggle }: Props) {
   const location = useLocation();
   const { signOut, isAdmin, user } = useAuth();
+  const { branding } = useBranding();
 
   return (
     <aside
@@ -49,12 +52,16 @@ export default function AppSidebar({ collapsed, onToggle }: Props) {
     >
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
-          <MessageCircle className="w-4 h-4 text-primary-foreground" />
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0 overflow-hidden">
+          {branding.logo_url ? (
+            <img src={branding.logo_url} alt={branding.platform_name} className="w-full h-full object-contain" />
+          ) : (
+            <MessageCircle className="w-4 h-4 text-primary-foreground" />
+          )}
         </div>
         {!collapsed && (
           <span className="font-bold text-foreground text-sm tracking-tight animate-slide-in">
-            Prospecta AI
+            {branding.platform_name}
           </span>
         )}
       </div>
@@ -132,6 +139,16 @@ export default function AppSidebar({ collapsed, onToggle }: Props) {
             >
               <Database className="w-[18px] h-[18px] shrink-0" />
               {!collapsed && <span>Banco de Dados</span>}
+            </NavLink>
+            <NavLink
+              to="/branding"
+              className={cn(
+                "sidebar-item",
+                location.pathname === "/branding" && "active"
+              )}
+            >
+              <Palette className="w-[18px] h-[18px] shrink-0" />
+              {!collapsed && <span>Identidade Visual</span>}
             </NavLink>
           </>
         )}

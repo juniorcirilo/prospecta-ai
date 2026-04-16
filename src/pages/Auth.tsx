@@ -8,9 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageCircle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useBranding } from "@/hooks/useBranding";
 
 export default function Auth() {
   const { user, loading: authLoading } = useAuth();
+  const { branding } = useBranding();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -90,11 +92,15 @@ export default function Auth() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md border-border/50 bg-card/80 backdrop-blur-xl">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-            <MessageCircle className="w-6 h-6 text-primary-foreground" />
+          <div className="mx-auto w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center overflow-hidden">
+            {branding.logo_url ? (
+              <img src={branding.logo_url} alt={branding.auth_title} className="w-full h-full object-contain" />
+            ) : (
+              <MessageCircle className="w-6 h-6 text-primary-foreground" />
+            )}
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold text-foreground">Evo Disparo</CardTitle>
+            <CardTitle className="text-2xl font-bold text-foreground">{branding.auth_title}</CardTitle>
             <CardDescription className="text-muted-foreground">
               {isLogin ? "Entre na sua conta" : "Crie sua conta"}
             </CardDescription>
