@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useContacts } from "@/hooks/useContacts";
 import { useWhatsAppInstances } from "@/hooks/useWhatsAppInstances";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeBrazilianPhone } from "@/lib/phoneUtils";
 import { toast } from "sonner";
 
 interface Contact {
@@ -76,7 +77,8 @@ const getBestPhone = (contact: Contact): string => {
 
   for (const raw of candidates) {
     const parsed = parseWaMe((raw || "").trim());
-    if (normalizePhone(parsed).length >= 8) return parsed;
+    const normalized = normalizeBrazilianPhone(parsed);
+    if (normalized) return normalized;
   }
 
   return "";
@@ -139,7 +141,10 @@ export default function GenerateListDialog({ contacts, searchName }: Props) {
 
   const duplicatePhoneCount = rawContactsWithPhone.length - contactsWithPhone.length;
   const validCount = validationResults.filter((r) => r.exists).length;
-  const invalidCount = validationResults.filter((r) => !r.exists).length;
+  const unresolvedValidationCount = validationDone
+    ? Math.max(contactsWithPhone.length - validationResults.length, 0)
+    : 0;
+  const invalidCount = validationResults.filter((r) => !r.exists).length + unresolvedValidationCount;
 
   const ensureContactAssignedToList = async (contactId: string, targetListId: string) => {
     const { error } = await supabase
@@ -230,6 +235,12 @@ export default function GenerateListDialog({ contacts, searchName }: Props) {
       setValidationResults(mapped);
       setValidationProgress(100);
       setValidationDone(true);
+
+      if (mapped.length === 0) {
+        toast.warning("Nenhum número pôde ser validado. Eles serão tratados como inválidos.");
+      } else if (mapped.length < contactsWithPhone.length) {
+        toast.warning(`${contactsWithPhone.length - mapped.length} número(s) ficaram fora da validação e serão tratados como inválidos.`);
+      }
     } catch (err: any) {
       console.error("Validation error:", err);
       toast.error("Erro na validação: " + (err.message || "Erro desconhecido"));
@@ -242,6 +253,18 @@ export default function GenerateListDialog({ contacts, searchName }: Props) {
     setIsGenerating(true);
 
     try {
+      const contactsToAdd = validationDone
+        ? contactsWithPhone
+            .map((contact, index) => ({ contact, index }))
+            .filter(({ index }) => validationResults.some((result) => result.index === index && result.exists))
+        : contactsWithPhone.map((contact, index) => ({ contact, index }));
+
+      if (validationDone && contactsToAdd.length === 0) {
+        toast.error("Nenhum número válido foi encontrado na validação");
+        setIsGenerating(false);
+        return;
+      }
+
       let targetListId = selectedListId;
 
       if (selectedListId === "new") {
@@ -255,27 +278,15 @@ export default function GenerateListDialog({ contacts, searchName }: Props) {
         targetListId = newList.id;
       }
 
-      let contactsToAdd = contactsWithPhone;
-      // Build a map of validation status per original index
-      const validationMap = new Map<number, boolean>();
-      if (validationDone && validationResults.length > 0) {
-        for (const vr of validationResults) {
-          validationMap.set(vr.index, vr.exists);
-        }
-        const validIndices = new Set(validationResults.filter((result) => result.exists).map((result) => result.index));
-        contactsToAdd = contactsWithPhone.filter((_, index) => validIndices.has(index));
-      }
-
       let newCount = 0;
       let reusedCount = 0;
       let linkedCount = 0;
       let failedCount = 0;
 
       for (let i = 0; i < contactsToAdd.length; i++) {
-        const contact = contactsToAdd[i];
+        const { contact } = contactsToAdd[i];
         const normalizedPhone = normalizePhone(getBestPhone(contact));
         const customFields = buildContactCustomFields(contact);
-        // Determine whatsapp_valid: true if validation was done and contact passed, null if no validation
         const whatsappValid = validationDone ? true : null;
 
         try {
@@ -546,6 +557,12 @@ export default function GenerateListDialog({ contacts, searchName }: Props) {
               </>
             )}
           </Button>
+
+          {validationDone && unresolvedValidationCount > 0 && (
+            <p className="text-[10px] text-warning text-center">
+              {unresolvedValidationCount} número(s) não puderam ser validados e ficaram fora da lista.
+            </p>
+          )}
 
           {!validationDone && channel === "whatsapp" && instanceId && (
             <p className="text-[10px] text-muted-foreground text-center">
