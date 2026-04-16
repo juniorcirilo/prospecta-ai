@@ -25,6 +25,8 @@ import FlowEditor from "@/pages/FlowEditor";
 import Auth from "@/pages/Auth";
 import UsersAdmin from "@/pages/UsersAdmin";
 import DatabaseInfo from "@/pages/DatabaseInfo";
+import Branding from "@/pages/Branding";
+import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
+      <BrandingProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -57,11 +60,13 @@ const App = () => (
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/users" element={<UsersAdmin />} />
               <Route path="/database-info" element={<DatabaseInfo />} />
+              <Route path="/branding" element={<Branding />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+      </BrandingProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
