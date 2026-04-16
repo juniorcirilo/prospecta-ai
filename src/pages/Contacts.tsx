@@ -125,15 +125,42 @@ export default function Contacts() {
   };
 
   const handleExportCsv = () => {
-    const header = "nome,telefone,empresa,cidade,status,score,tags";
-    const rows = contacts.map(c =>
-      `"${c.name}","${c.phone}","${c.company}","${c.city}","${c.status}",${c.score},"${(c.tags || []).join(';')}"`
-    );
-    const csv = [header, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    // Collect all custom field keys across contacts
+    const customKeys = new Set<string>();
+    contacts.forEach(c => {
+      if (c.custom_fields && typeof c.custom_fields === 'object') {
+        Object.keys(c.custom_fields as Record<string, string>).forEach(k => customKeys.add(k));
+      }
+    });
+    const customKeysArr = Array.from(customKeys).sort();
+
+    const baseHeaders = ["nome", "telefone", "empresa", "cidade", "status", "score", "tags"];
+    const header = [...baseHeaders, ...customKeysArr].join(",");
+
+    const escape = (v: string) => `"${(v || "").replace(/"/g, '""')}"`;
+
+    const rows = contacts.map(c => {
+      const cf = (c.custom_fields || {}) as Record<string, string>;
+      const base = [
+        escape(c.name),
+        escape(c.phone),
+        escape(c.company || ""),
+        escape(c.city || ""),
+        escape(c.status),
+        String(c.score),
+        escape((c.tags || []).join(";")),
+      ];
+      const custom = customKeysArr.map(k => escape(cf[k] || ""));
+      return [...base, ...custom].join(",");
+    });
+
+    const csv = "\uFEFF" + [header, ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = "contatos.csv"; a.click();
+    a.href = url;
+    a.download = `contatos${activeListObj ? "_" + activeListObj.name.replace(/\s+/g, "_") : ""}.csv`;
+    a.click();
     URL.revokeObjectURL(url);
     toast.success("CSV exportado");
   };

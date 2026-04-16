@@ -15,6 +15,7 @@ export interface Contact {
   list_id: string | null;
   is_blacklisted: boolean;
   whatsapp_valid: boolean | null;
+  custom_fields: Record<string, string> | null;
   created_at: string;
   updated_at: string;
 }
@@ -89,7 +90,7 @@ export function useContacts(listId?: string | null) {
   }, [queryClient]);
 
   const addContact = useMutation({
-    mutationFn: async (contact: Omit<Contact, 'id' | 'created_at' | 'updated_at' | 'is_blacklisted' | 'whatsapp_valid'>) => {
+    mutationFn: async (contact: Omit<Contact, 'id' | 'created_at' | 'updated_at' | 'is_blacklisted' | 'whatsapp_valid' | 'custom_fields'> & { custom_fields?: Record<string, string> | null }) => {
       const { data, error } = await supabase.from('contacts').insert(contact).select().single();
       if (error) throw error;
       return data;
