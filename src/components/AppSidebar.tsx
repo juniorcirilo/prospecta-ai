@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Search, Users, Megaphone, Zap, MessageSquare, Brain, Shield,
-  BarChart3, FlaskConical, Smartphone, Settings, ChevronLeft, MessageCircle, Volume2, Kanban, GitBranch, LogOut,
+  BarChart3, FlaskConical, Smartphone, Settings, ChevronLeft, MessageCircle, Volume2, Kanban, GitBranch, LogOut, Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -112,16 +112,28 @@ export default function AppSidebar({ collapsed, onToggle }: Props) {
           </div>
         )}
         {isAdmin && (
-          <NavLink
-            to="/users"
-            className={cn(
-              "sidebar-item",
-              location.pathname === "/users" && "active"
-            )}
-          >
-            <Shield className="w-[18px] h-[18px] shrink-0" />
-            {!collapsed && <span>Usuários</span>}
-          </NavLink>
+          <>
+            <NavLink
+              to="/users"
+              className={cn(
+                "sidebar-item",
+                location.pathname === "/users" && "active"
+              )}
+            >
+              <Shield className="w-[18px] h-[18px] shrink-0" />
+              {!collapsed && <span>Usuários</span>}
+            </NavLink>
+            <NavLink
+              to="/database-info"
+              className={cn(
+                "sidebar-item",
+                location.pathname === "/database-info" && "active"
+              )}
+            >
+              <Database className="w-[18px] h-[18px] shrink-0" />
+              {!collapsed && <span>Banco de Dados</span>}
+            </NavLink>
+          </>
         )}
         <NavLink
           to="/settings"
