@@ -1,16 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+import { corsHeaders, requireAuth } from "../_shared/auth.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
+  const auth = await requireAuth(req);
+  if (auth instanceof Response) return auth;
+
   try {
     const { base_text, instruction, count = 10, mode = 'full' } = await req.json();
     if (!base_text && mode !== 'generate_copy') throw new Error('base_text is required');
+    if (base_text && (typeof base_text !== 'string' || base_text.length > 5000)) throw new Error('base_text inválido');
+    if (typeof count !== 'number' || count < 1 || count > 50) throw new Error('count fora do intervalo (1-50)');
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');

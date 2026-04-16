@@ -1,8 +1,4 @@
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { corsHeaders, requireAuth } from "../_shared/auth.ts";
 
 const SYSTEM_PROMPT = `Você é um assistente conversacional que ajuda a configurar buscas de leads para prospecção B2B.
 
@@ -200,8 +196,12 @@ const TOOLS = [
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const auth = await requireAuth(req);
+  if (auth instanceof Response) return auth;
+
   try {
     const { messages, lists } = await req.json();
+    if (!Array.isArray(messages) || messages.length > 100) throw new Error("messages inválidos");
     console.log("[lead-search-ai-chat] Received", messages?.length, "messages");
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");

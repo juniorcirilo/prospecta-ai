@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+import { corsHeaders, jsonResponse, requireAuth } from "../_shared/auth.ts";
 
 serve(async (req) => {
   console.log(`[create-evolution-instance] Received ${req.method} request`);
@@ -13,18 +9,18 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const auth = await requireAuth(req, { requireAdmin: true });
+  if (auth instanceof Response) return auth;
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { instance_name, name, is_default } = await req.json();
+    const { instance_name, name, is_default } = await req.json().catch(() => ({}));
 
-    if (!instance_name || !name) {
-      return new Response(JSON.stringify({ success: false, error: 'Campos obrigatórios: instance_name, name' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (typeof instance_name !== 'string' || typeof name !== 'string' || instance_name.length === 0 || name.length === 0 || instance_name.length > 100 || name.length > 100) {
+      return jsonResponse({ success: false, error: 'instance_name e name são obrigatórios (max 100 chars)' }, 400);
     }
 
     // Read Evolution API credentials from app_settings

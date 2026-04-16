@@ -73,29 +73,8 @@ export default function Auth() {
       if (error) {
         toast({ title: "Erro ao cadastrar", description: error.message, variant: "destructive" });
       } else if (data.user) {
-        // Hardcoded: create profile + role without relying on triggers
-        try {
-          await supabase.from("profiles").upsert({
-            id: data.user.id,
-            email: data.user.email,
-            full_name: fullName,
-          });
-
-          // Check if any roles exist — if not, first user becomes admin
-          const { count } = await supabase
-            .from("user_roles")
-            .select("*", { count: "exact", head: true });
-
-          const assignedRole = (count === null || count === 0) ? "admin" : "user";
-
-          await supabase.from("user_roles").upsert({
-            user_id: data.user.id,
-            role: assignedRole,
-          });
-        } catch (e) {
-          console.error("Error setting up user profile/role:", e);
-        }
-
+        // Profile + role are created server-side via the handle_new_user() database trigger.
+        // NEVER assign roles client-side — that would allow privilege escalation.
         if (data.session) {
           toast({ title: "Conta criada!", description: "Cadastro concluído. Você já está logado." });
         } else {

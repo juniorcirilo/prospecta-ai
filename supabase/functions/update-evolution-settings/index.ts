@@ -1,28 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
+import { corsHeaders, jsonResponse, requireAuth } from "../_shared/auth.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const auth = await requireAuth(req, { requireAdmin: true });
+  if (auth instanceof Response) return auth;
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    const { instance_id, groups_ignore, reject_call, msg_call, always_online, read_messages, webhook_enabled } = await req.json();
+    const { instance_id, groups_ignore, reject_call, msg_call, always_online, read_messages, webhook_enabled } = await req.json().catch(() => ({}));
 
-    if (!instance_id || groups_ignore === undefined) {
-      return new Response(JSON.stringify({ success: false, error: 'Campos obrigatórios: instance_id, groups_ignore' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (typeof instance_id !== 'string' || groups_ignore === undefined) {
+      return jsonResponse({ success: false, error: 'Campos obrigatórios: instance_id, groups_ignore' }, 400);
     }
 
     // Buscar dados da instância
