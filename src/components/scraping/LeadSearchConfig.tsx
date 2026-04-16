@@ -87,8 +87,9 @@ function toggleInArray(arr: string[], value: string): string[] {
 }
 
 export default function LeadSearchConfig({ onBack, searchId }: Props) {
-  const { createSearch, searches } = useLeadSearches();
+  const { createSearch, updateSearch, searches } = useLeadSearches();
   const { lists } = useContacts();
+  const isEditing = !!searchId;
 
   // Base
   const [name, setName] = useState("");
@@ -323,13 +324,24 @@ export default function LeadSearchConfig({ onBack, searchId }: Props) {
       config.advanced.export_to_crm = exportToCrm;
     }
 
-    createSearch.mutate({
-      name: name || `Busca ${new Date().toLocaleDateString("pt-BR")}`,
-      source,
-      config,
-      target_list_id: targetListId || null,
-      autoExecute: true,
-    }, { onSuccess: () => onBack() });
+    if (isEditing && searchId) {
+      updateSearch.mutate({
+        id: searchId,
+        name: name || `Busca ${new Date().toLocaleDateString("pt-BR")}`,
+        source,
+        config,
+        target_list_id: targetListId || null,
+        autoExecute: true,
+      }, { onSuccess: () => onBack() });
+    } else {
+      createSearch.mutate({
+        name: name || `Busca ${new Date().toLocaleDateString("pt-BR")}`,
+        source,
+        config,
+        target_list_id: targetListId || null,
+        autoExecute: true,
+      }, { onSuccess: () => onBack() });
+    }
   };
 
   return (

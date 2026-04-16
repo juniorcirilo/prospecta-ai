@@ -116,6 +116,48 @@ export function useLeadSearches() {
     onError: (err: Error) => toast.error(`Erro: ${err.message}`),
   });
 
+  const updateSearch = useMutation({
+    mutationFn: async (params: {
+      id: string;
+      name: string;
+      source: string;
+      config: any;
+      target_list_id?: string | null;
+      autoExecute?: boolean;
+    }) => {
+      const { data, error } = await supabase
+        .from("lead_searches")
+        .update({
+          name: params.name,
+          source: params.source,
+          config: params.config,
+          target_list_id: params.target_list_id || null,
+          status: params.autoExecute ? "pending" : "draft",
+        } as any)
+        .eq("id", params.id)
+        .select()
+        .single();
+      if (error) throw error;
+
+      const search = data as unknown as LeadSearch;
+
+      if (params.autoExecute) {
+        supabase.functions
+          .invoke("lead-search-execute", { body: { searchId: search.id } })
+          .then((res) => {
+            if (res.error) console.error("Lead search execution error:", res.error);
+          });
+      }
+
+      return search;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lead-searches"] });
+      toast.success("Busca atualizada!");
+    },
+    onError: (err: Error) => toast.error(`Erro: ${err.message}`),
+  });
+
   const cloneSearch = useMutation({
     mutationFn: async (id: string) => {
       const original = searches.find((s) => s.id === id);
@@ -199,7 +241,7 @@ export function useLeadSearches() {
 
   return {
     searches, stats, isLoading: searchesQuery.isLoading,
-    createSearch, executeSearch, cloneSearch, deleteSearch, enrichSearch, resumeEnrichment,
+    createSearch, updateSearch, executeSearch, cloneSearch, deleteSearch, enrichSearch, resumeEnrichment,
     isSearchStuck,
   };
 }
