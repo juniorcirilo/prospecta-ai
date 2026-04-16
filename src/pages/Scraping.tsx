@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Search, Plus, Play, Clock, CheckCircle2, AlertCircle, Download,
-  Globe, RefreshCw, Trash2, Eye, Sparkles, Settings2, AlertTriangle,
+  Globe, RefreshCw, Trash2, Eye, Sparkles, Settings2, AlertTriangle, Copy, Pencil,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -70,7 +70,7 @@ export default function Scraping() {
   const [targetListId, setTargetListId] = useState<string>("");
 
   const { jobs, isLoading: jobsLoading, startJob, deleteJob } = useScrapingJobs();
-  const { searches, stats, isLoading: searchesLoading, deleteSearch, enrichSearch, resumeEnrichment, isSearchStuck } = useLeadSearches();
+  const { searches, stats, isLoading: searchesLoading, deleteSearch, enrichSearch, resumeEnrichment, isSearchStuck, cloneSearch } = useLeadSearches();
   const { lists } = useContacts();
 
   const selectedSearch = selectedSearchId ? searches.find(s => s.id === selectedSearchId) || null : null;
@@ -82,7 +82,7 @@ export default function Scraping() {
     return <LeadSearchDetail search={selectedSearch} onBack={() => { setView("list"); setSelectedSearchId(null); }} />;
   }
   if (view === "config") {
-    return <LeadSearchConfig onBack={() => setView("list")} />;
+    return <LeadSearchConfig onBack={() => { setView("list"); setSelectedSearchId(null); }} searchId={selectedSearchId} />;
   }
 
   const handleStartScrape = () => {
@@ -228,7 +228,28 @@ export default function Scraping() {
                           <TableCell className="text-muted-foreground">{formatDate(s.created_at)}</TableCell>
                           <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-end gap-1">
-                              {/* Resume/reprocess button — visible for any search with a checkpoint or incomplete enrichment */}
+                              {/* Clone button */}
+                              <Button
+                                variant="ghost" size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                onClick={() => cloneSearch.mutate(s.id)}
+                                disabled={cloneSearch.isPending}
+                                title="Clonar busca"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </Button>
+                              {/* Edit cloned (draft) searches */}
+                              {s.status === "draft" && (
+                                <Button
+                                  variant="ghost" size="icon"
+                                  className="h-7 w-7 text-muted-foreground hover:text-primary"
+                                  onClick={() => { setSelectedSearchId(s.id); setView("config"); }}
+                                  title="Editar configuração"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                              {/* Resume/reprocess button */}
                               {(stuck || isPartial || (s.status === "completed" && s.enrich_step) || s.status === "failed") && (
                                 <Button
                                   variant="ghost" size="icon"

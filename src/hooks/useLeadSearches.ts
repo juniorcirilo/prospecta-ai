@@ -116,6 +116,31 @@ export function useLeadSearches() {
     onError: (err: Error) => toast.error(`Erro: ${err.message}`),
   });
 
+  const cloneSearch = useMutation({
+    mutationFn: async (id: string) => {
+      const original = searches.find((s) => s.id === id);
+      if (!original) throw new Error("Busca não encontrada");
+      const { data, error } = await supabase
+        .from("lead_searches")
+        .insert({
+          name: `${original.name} (cópia)`,
+          source: original.source,
+          config: original.config,
+          target_list_id: original.target_list_id,
+          status: "draft",
+        } as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as unknown as LeadSearch;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lead-searches"] });
+      toast.success("Busca clonada com sucesso!");
+    },
+    onError: (err: Error) => toast.error(`Erro ao clonar: ${err.message}`),
+  });
+
   const deleteSearch = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("lead_searches").delete().eq("id", id);
@@ -174,7 +199,7 @@ export function useLeadSearches() {
 
   return {
     searches, stats, isLoading: searchesQuery.isLoading,
-    createSearch, executeSearch, deleteSearch, enrichSearch, resumeEnrichment,
+    createSearch, executeSearch, cloneSearch, deleteSearch, enrichSearch, resumeEnrichment,
     isSearchStuck,
   };
 }

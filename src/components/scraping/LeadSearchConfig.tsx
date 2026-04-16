@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, Play, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { useContacts } from "@/hooks/useContacts";
 
 interface Props {
   onBack: () => void;
+  searchId?: string | null;
 }
 
 const SENIORITIES = [
@@ -85,8 +86,8 @@ function toggleInArray(arr: string[], value: string): string[] {
   return arr.includes(value) ? arr.filter((x) => x !== value) : [...arr, value];
 }
 
-export default function LeadSearchConfig({ onBack }: Props) {
-  const { createSearch } = useLeadSearches();
+export default function LeadSearchConfig({ onBack, searchId }: Props) {
+  const { createSearch, searches } = useLeadSearches();
   const { lists } = useContacts();
 
   // Base
@@ -156,6 +157,75 @@ export default function LeadSearchConfig({ onBack }: Props) {
   const [firecrawlTimeout, setFirecrawlTimeout] = useState(5);
   const [dedupEnabled, setDedupEnabled] = useState(true);
   const [exportToCrm, setExportToCrm] = useState(false);
+
+  // Pre-fill from existing search when editing
+  useEffect(() => {
+    if (!searchId) return;
+    const existing = searches.find((s) => s.id === searchId);
+    if (!existing) return;
+    const c = existing.config || {};
+    setName(existing.name || "");
+    setSource(existing.source || "apollo");
+    setTargetListId(existing.target_list_id || "");
+    if (c.query) setQuery(c.query);
+    if (c.persona) {
+      if (c.persona.titles) setTitles(c.persona.titles.join(", "));
+      if (c.persona.seniorities) setSeniorities(c.persona.seniorities);
+      if (c.persona.departments) setDepartments(c.persona.departments);
+      if (c.persona.keywords) setKeywords(c.persona.keywords.join(", "));
+      if (c.persona.tenure_months) { setTenureMin(String(c.persona.tenure_months.min || "")); setTenureMax(String(c.persona.tenure_months.max || "")); }
+      if (c.persona.experience_years) { setExperienceMin(String(c.persona.experience_years.min || "")); setExperienceMax(String(c.persona.experience_years.max || "")); }
+    }
+    if (c.company) {
+      if (c.company.names) setCompanyNames(c.company.names.join(", "));
+      if (c.company.domains) setCompanyDomains(c.company.domains.join(", "));
+      if (c.company.industries) setIndustries(c.company.industries.join(", "));
+      if (c.company.employee_ranges) setEmployeeRanges(c.company.employee_ranges);
+      if (c.company.revenue) { setRevenueMin(String(c.company.revenue.min || "")); setRevenueMax(String(c.company.revenue.max || "")); }
+      if (c.company.technologies) setTechnologies(c.company.technologies.join(", "));
+      if (c.company.funding_stages) setFundingStages(c.company.funding_stages);
+      if (c.company.founded_year) { setFoundedMin(String(c.company.founded_year.min || "")); setFoundedMax(String(c.company.founded_year.max || "")); }
+      if (c.company.publicly_traded) setPubliclyTraded(true);
+      if (c.company.hiring) { setHiringKeywords(c.company.hiring.keywords || ""); setHiringPeriod(c.company.hiring.period || ""); }
+    }
+    if (c.location) {
+      if (c.location.person_locations) setPersonLocations(c.location.person_locations.join(", "));
+      if (c.location.org_locations) setOrgLocations(c.location.org_locations.join(", "));
+      if (c.location.country) setCountry(c.location.country);
+    }
+    if (c.enrichment) {
+      setRevealCorpEmail(!!c.enrichment.reveal_corp_email);
+      setRevealPersonalEmail(!!c.enrichment.reveal_personal_emails);
+      setRevealPhone(!!c.enrichment.reveal_phone);
+      setWaterfallEmail(!!c.enrichment.waterfall_email);
+      setWaterfallPhone(!!c.enrichment.waterfall_phone);
+      if (c.enrichment.webhook_url) setWebhookUrl(c.enrichment.webhook_url);
+      setFirecrawlEnrich(!!c.enrichment.firecrawl_enrich);
+      setFireEnrich(!!c.enrichment.fire_enrich);
+    }
+    if (c.filters) {
+      if (c.filters.email_status) setEmailStatuses(c.filters.email_status);
+      if (c.filters.has_email) setHasEmail(true);
+      if (c.filters.has_phone) setHasPhone(true);
+      if (c.filters.current_company !== undefined) setCurrentCompany(c.filters.current_company);
+      if (c.filters.time_period) setTimePeriod(c.filters.time_period);
+      if (c.filters.sort_by) setSortBy(c.filters.sort_by);
+    }
+    if (c.volume) {
+      if (c.volume.per_page) setPerPage(c.volume.per_page);
+      if (c.volume.volume_unit) setVolumeUnit(c.volume.volume_unit);
+      if (c.volume.max_total) setMaxTotal(String(c.volume.max_total));
+      if (c.volume.bulk_enrich_batch) setBulkEnrichBatch(String(c.volume.bulk_enrich_batch));
+    }
+    if (c.advanced) {
+      if (c.advanced.site_domain) setSiteDomain(c.advanced.site_domain);
+      if (c.advanced.extract_fields) setExtractFields(c.advanced.extract_fields);
+      if (c.advanced.custom_schema) setCustomSchema(JSON.stringify(c.advanced.custom_schema, null, 2));
+      if (c.advanced.firecrawl_timeout) setFirecrawlTimeout(c.advanced.firecrawl_timeout);
+      if (c.advanced.dedup_enabled !== undefined) setDedupEnabled(c.advanced.dedup_enabled);
+      if (c.advanced.export_to_crm) setExportToCrm(c.advanced.export_to_crm);
+    }
+  }, [searchId, searches]);
 
   const isApollo = source === "apollo" || source === "apollo_firecrawl";
   const isFirecrawl = source === "firecrawl" || source === "firecrawl_site" || source === "apollo_firecrawl";
