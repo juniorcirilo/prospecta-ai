@@ -115,8 +115,8 @@ export default function Scraping() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard title="Total Encontrados" value={stats.totalFound.toLocaleString("pt-BR")} subtitle={`${stats.totalSearches} buscas`} icon={<Download className="w-5 h-5 text-primary" />} />
         <StatCard title="Novos Leads" value={stats.totalNew.toLocaleString("pt-BR")} subtitle="não duplicados" icon={<CheckCircle2 className="w-5 h-5 text-success" />} />
-        <StatCard title="Buscas Ativas" value={String(stats.activeSearches)} subtitle="em execução" icon={<RefreshCw className="w-5 h-5 text-info" />} />
-        <StatCard title="Listas" value={String(lists.length)} subtitle="disponíveis" icon={<Globe className="w-5 h-5 text-warning" />} />
+        <StatCard title="Buscas Ativas" value={String(stats.activeSearches)} subtitle={`${stats.totalSearches} no total`} icon={<RefreshCw className="w-5 h-5 text-info" />} changeType={stats.activeSearches > 0 ? "up" : "neutral"} />
+        <StatCard title="Listas" value={String(lists.length)} subtitle={`${searches.filter(s => s.target_list_id).length} vinculadas`} icon={<Globe className="w-5 h-5 text-warning" />} />
       </div>
 
       {/* Running progress */}
