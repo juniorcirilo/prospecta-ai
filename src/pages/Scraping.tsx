@@ -82,7 +82,7 @@ export default function Scraping() {
     return <LeadSearchDetail search={selectedSearch} onBack={() => { setView("list"); setSelectedSearchId(null); }} />;
   }
   if (view === "config") {
-    return <LeadSearchConfig onBack={() => setView("list")} />;
+    return <LeadSearchConfig onBack={() => { setView("list"); setSelectedSearchId(null); }} searchId={selectedSearchId} />;
   }
 
   const handleStartScrape = () => {
