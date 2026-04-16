@@ -24,6 +24,7 @@ import Flows from "@/pages/Flows";
 import FlowEditor from "@/pages/FlowEditor";
 import Auth from "@/pages/Auth";
 import UsersAdmin from "@/pages/UsersAdmin";
+import DatabaseInfo from "@/pages/DatabaseInfo";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/flows/:id/edit" element={<FlowEditor />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/users" element={<UsersAdmin />} />
+              <Route path="/database-info" element={<DatabaseInfo />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
