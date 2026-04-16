@@ -125,33 +125,37 @@ export default function Contacts() {
   };
 
   const handleExportCsv = () => {
-    // Collect all custom field keys across contacts
-    const customKeys = new Set<string>();
-    contacts.forEach(c => {
-      if (c.custom_fields && typeof c.custom_fields === 'object') {
-        Object.keys(c.custom_fields as Record<string, string>).forEach(k => customKeys.add(k));
-      }
-    });
-    const customKeysArr = Array.from(customKeys).sort();
-
-    const baseHeaders = ["nome", "telefone", "empresa", "cidade", "status", "score", "tags"];
-    const header = [...baseHeaders, ...customKeysArr].join(",");
-
     const escape = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+
+    const headers = [
+      "Nome", "E-mail", "Telefone", "Empresa", "Cidade",
+      "Status", "Score", "Tags", "Website", "WhatsApp",
+      "Instagram", "Facebook", "LinkedIn", "Setor", "Serviços",
+      "AI Score", "AI Insights"
+    ];
+    const header = headers.join(";");
 
     const rows = contacts.map(c => {
       const cf = (c.custom_fields || {}) as Record<string, string>;
-      const base = [
+      return [
         escape(c.name),
+        escape(cf.email || cf.company_email || ""),
         escape(c.phone),
         escape(c.company || ""),
         escape(c.city || ""),
         escape(c.status),
         String(c.score),
-        escape((c.tags || []).join(";")),
-      ];
-      const custom = customKeysArr.map(k => escape(cf[k] || ""));
-      return [...base, ...custom].join(",");
+        escape((c.tags || []).join("; ")),
+        escape(cf.website || ""),
+        escape(cf.whatsapp_site || ""),
+        escape(cf.instagram || ""),
+        escape(cf.facebook || ""),
+        escape(cf.linkedin || cf.linkedin_url || cf.company_linkedin || ""),
+        escape(cf.industry || ""),
+        escape(cf.company_services || ""),
+        escape(cf.ai_score || ""),
+        escape(cf.ai_insights || ""),
+      ].join(";");
     });
 
     const csv = "\uFEFF" + [header, ...rows].join("\n");
