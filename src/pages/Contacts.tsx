@@ -137,7 +137,7 @@ export default function Contacts() {
     const baseHeaders = ["nome", "telefone", "empresa", "cidade", "status", "score", "tags"];
     const header = [...baseHeaders, ...customKeysArr].join(",");
 
-    const escape = (v: string) => `"${(v || "").replace(/"/g, '""')}"`;
+    const escape = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
 
     const rows = contacts.map(c => {
       const cf = (c.custom_fields || {}) as Record<string, string>;
