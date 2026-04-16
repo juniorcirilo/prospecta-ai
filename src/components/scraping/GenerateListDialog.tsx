@@ -256,7 +256,12 @@ export default function GenerateListDialog({ contacts, searchName }: Props) {
       }
 
       let contactsToAdd = contactsWithPhone;
+      // Build a map of validation status per original index
+      const validationMap = new Map<number, boolean>();
       if (validationDone && validationResults.length > 0) {
+        for (const vr of validationResults) {
+          validationMap.set(vr.index, vr.exists);
+        }
         const validIndices = new Set(validationResults.filter((result) => result.exists).map((result) => result.index));
         contactsToAdd = contactsWithPhone.filter((_, index) => validIndices.has(index));
       }
@@ -266,9 +271,12 @@ export default function GenerateListDialog({ contacts, searchName }: Props) {
       let linkedCount = 0;
       let failedCount = 0;
 
-      for (const contact of contactsToAdd) {
+      for (let i = 0; i < contactsToAdd.length; i++) {
+        const contact = contactsToAdd[i];
         const normalizedPhone = normalizePhone(getBestPhone(contact));
         const customFields = buildContactCustomFields(contact);
+        // Determine whatsapp_valid: true if validation was done and contact passed, null if no validation
+        const whatsappValid = validationDone ? true : null;
 
         try {
           const { data, error } = await supabase.rpc("upsert_lead_contact", {
@@ -287,6 +295,14 @@ export default function GenerateListDialog({ contacts, searchName }: Props) {
           const result = data as UpsertLeadContactResult | null;
           if (result?.skipped || !result?.id) continue;
 
+          // Update whatsapp_valid on the contact
+          if (whatsappValid !== null) {
+            await supabase
+              .from("contacts")
+              .update({ whatsapp_valid: whatsappValid })
+              .eq("id", result.id);
+          }
+
           if (result.is_new) {
             newCount++;
           } else {
@@ -300,6 +316,14 @@ export default function GenerateListDialog({ contacts, searchName }: Props) {
             const recoveredContactId = await recoverExistingContactAssignment(contact, normalizedPhone, targetListId);
 
             if (!recoveredContactId) throw err;
+
+            // Also update whatsapp_valid for recovered contacts
+            if (whatsappValid !== null && recoveredContactId) {
+              await supabase
+                .from("contacts")
+                .update({ whatsapp_valid: whatsappValid })
+                .eq("id", recoveredContactId);
+            }
 
             linkedCount++;
             reusedCount++;
